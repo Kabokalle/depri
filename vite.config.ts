@@ -3,16 +3,13 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
 
-// mode "android": Build für die Capacitor-App (relative Pfade, kein Service Worker)
-export default defineConfig(({ command, mode, isPreview }) => {
-  const android = mode === 'android'
+export default defineConfig(({ command, isPreview }) => {
   return {
     define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-    base: android ? './' : command === 'build' || isPreview ? '/depri/' : '/',
+    base: command === 'build' || isPreview ? '/depri/' : '/',
     plugins: [
       react(),
       VitePWA({
-        disable: android,
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
         manifest: {

@@ -5,13 +5,11 @@ import { Chips, Field, Sheet, SheetFooter, Toggle } from '../components/ui'
 import { SEVERITY, SIDE_EFFECTS } from '../lib/labels'
 import { combine, defaultTime, timeStr, todayStr } from '../lib/dates'
 import { toast } from '../lib/store'
-import { syncReminders } from '../platform/reminders'
 
 export function MedicationSheet({ id, onClose }: { id?: number; onClose: () => void }) {
   const [name, setName] = useState('')
   const [dose, setDose] = useState('')
   const [times, setTimes] = useState<string[]>(['08:00'])
-  const [remind, setRemind] = useState(true)
   const [active, setActive] = useState(true)
   const [changeNote, setChangeNote] = useState('')
   const [existing, setExisting] = useState<Medication | undefined>()
@@ -24,7 +22,6 @@ export function MedicationSheet({ id, onClose }: { id?: number; onClose: () => v
       setName(m.name)
       setDose(m.dose)
       setTimes(m.times)
-      setRemind(m.remind)
       setActive(m.active)
     })
   }, [id])
@@ -43,14 +40,13 @@ export function MedicationSheet({ id, onClose }: { id?: number; onClose: () => v
       name: name.trim(),
       dose: dose.trim(),
       times: [...new Set(times.filter(Boolean))].sort(),
-      remind,
+      remind: existing?.remind ?? true,
       active,
       createdAt: existing?.createdAt ?? Date.now(),
       history,
     }
     if (id != null) await db.medications.put({ ...med, id })
     else await db.medications.add(med)
-    await syncReminders()
     toast('Medikament gespeichert')
     onClose()
   }
@@ -68,8 +64,7 @@ export function MedicationSheet({ id, onClose }: { id?: number; onClose: () => v
               ? async () => {
                   await db.medications.delete(id)
                   await db.medIntakes.where('medId').equals(id).delete()
-                  await syncReminders()
-                  onClose()
+                                onClose()
                 }
               : undefined
           }
@@ -102,7 +97,6 @@ export function MedicationSheet({ id, onClose }: { id?: number; onClose: () => v
           + weitere Uhrzeit
         </button>
       </Field>
-      <Toggle checked={remind} onChange={setRemind} label="Daran erinnern" />
       <Toggle checked={active} onChange={setActive} label="Nehme ich aktuell" />
       {existing && existing.history.length > 0 && (
         <Field label="Verlauf">

@@ -1,26 +1,16 @@
-import { useRef, useState } from 'react'
-import { DEFAULT_SETTINGS, SECTION_LABELS, setSetting, useSettings, type Reminder } from '../lib/settings'
+import { useRef } from 'react'
+import { DEFAULT_SETTINGS, SECTION_LABELS, setSetting, useSettings } from '../lib/settings'
 import { Field, Stepper, Toggle } from '../components/ui'
-import { navigate, openSheet, toast } from '../lib/store'
+import { navigate, openSheet, toast, useStore } from '../lib/store'
 import { backupFilename, exportBackup, importBackup } from '../lib/export'
 import { shareFile } from '../platform/share'
-import { isAndroidApp, isIOSWeb } from '../platform/native'
-import { remindersSupported, syncReminders, testReminder } from '../platform/reminders'
-import { connectHealth, healthConnectSupported, syncHealth } from '../platform/health'
-import { todayStr, timeStr, formatShort, toDateStr } from '../lib/dates'
+import { installStore, isAndroid, isStandalone, promptInstall } from '../platform/native'
+import { todayStr } from '../lib/dates'
 
 export function SettingsScreen() {
   const s = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [hcBusy, setHcBusy] = useState(false)
-
-  const updateReminder = async (id: number, patch: Partial<Reminder>) => {
-    await setSetting(
-      'reminders',
-      s.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-    )
-    await syncReminders()
-  }
+  const install = useStore(installStore)
 
   const backup = async () => {
     const blob = await exportBackup()
@@ -31,14 +21,11 @@ export function SettingsScreen() {
     if (!confirm('Achtung: Alle aktuellen Daten werden durch die Sicherung ersetzt. Fortfahren?')) return
     try {
       const n = await importBackup(f)
-      await syncReminders()
       toast(`Sicherung wiederhergestellt (${n} Einträge)`)
     } catch (e) {
       alert((e as Error).message)
     }
   }
-
-  const lastSync = s.lastHealthSync ? new Date(s.lastHealthSync) : undefined
 
   return (
     <div className="screen">
@@ -95,87 +82,61 @@ export function SettingsScreen() {
         ))}
       </section>
 
-      <section className="card">
-        <h3>🔔 Erinnerungen</h3>
-        {remindersSupported ? (
-          <>
-            <p className="muted small">Freundliche Hinweise zu festen Uhrzeiten. Medikamenten-Erinnerungen stellst du beim jeweiligen Medikament ein.</p>
-            {s.reminders.map((r) => (
-              <div className="reminder-row" key={r.id}>
-                <Toggle checked={r.enabled} onChange={(v) => updateReminder(r.id, { enabled: v })} label={r.label} />
-                {r.enabled && <input type="time" value={r.time} onChange={(e) => updateReminder(r.id, { time: e.target.value })} />}
-              </div>
-            ))}
-            <button className="btn small ghost" onClick={testReminder}>
-              Test-Erinnerung in 5 Sekunden
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="small">
-              {isIOSWeb
-                ? 'Auf dem iPhone richtest du Erinnerungen einmalig über die Kurzbefehle-App ein. Dort lässt sich auch der automatische Abgleich von Schritten und Schlaf aus Apple Health einrichten.'
-                : 'Im Browser sind Erinnerungen nicht möglich. Nutze am iPhone die Kurzbefehle-App, auf Android die Depri-App.'}
-            </p>
-            <button className="btn small" onClick={() => navigate('/kurzbefehle')}>
-              Anleitung: Kurzbefehle & Apple Health
-            </button>
-          </>
-        )}
-      </section>
-
-      {healthConnectSupported && (
-        <section className="card">
-          <h3>❤️ Health Connect</h3>
-          <p className="muted small">
-            Schritte, Schlaf und Trainings automatisch übernehmen (z. B. von Google Fit, Samsung Health, Fitbit).
-          </p>
-          {s.healthConnected ? (
-            <>
-              <p className="small">
-                Verbunden ✓{lastSync ? ` · zuletzt ${toDateStr(lastSync) === todayStr() ? 'heute' : formatShort(toDateStr(lastSync))} ${timeStr(lastSync.getTime())}` : ''}
-              </p>
-              <button
-                className="btn small"
-                disabled={hcBusy}
-                onClick={async () => {
-                  setHcBusy(true)
-                  await syncHealth(30)
-                  setHcBusy(false)
-                  toast('Abgeglichen ✓')
-                }}
-              >
-                {hcBusy ? 'Gleiche ab …' : 'Jetzt abgleichen (30 Tage)'}
-              </button>
-            </>
-          ) : (
-            <button
-              className="btn"
-              disabled={hcBusy}
-              onClick={async () => {
-                setHcBusy(true)
-                try {
-                  const ok = await connectHealth()
-                  toast(ok ? 'Health Connect verbunden ✓' : 'Keine Berechtigung erteilt')
-                } catch (e) {
-                  alert((e as Error).message)
-                } finally {
-                  setHcBusy(false)
-                }
-              }}
-            >
-              Mit Health Connect verbinden
-            </button>
-          )}
-        </section>
+      {install && !isStandalone && (
+        <button
+          className="card action-card report"
+          onClick={async () => {
+            if (await promptInstall()) toast('Depri ist installiert ✓')
+          }}
+        >
+          <span className="action-icon">📲</span>
+          <span>
+            <b>Als App installieren</b>
+            <span className="small muted block">Eigenes Icon, Vollbild, funktioniert offline</span>
+          </span>
+          <span className="chev">›</span>
+        </button>
       )}
 
-      {!isAndroidApp && (
+      <section className="card">
+        <h3>🔔 Erinnerungen</h3>
+        <p className="small">
+          Web-Apps können ohne eigenen Server keine Benachrichtigungen zu festen Uhrzeiten verschicken. Nimm dafür die
+          Erinnerungen deines Handys – das ist zuverlässig und bleibt privat:
+        </p>
+        {isAndroid ? (
+          <ul className="steps-list small">
+            <li>
+              <b>Google Kalender oder Google Tasks:</b> Termin oder Aufgabe, z. B. „Frühstück eingetragen? 🥐“, mit{' '}
+              <i>Wiederholen: Täglich</i>.
+            </li>
+            <li>
+              Oder sag einfach: <i>„Hey Google, erinnere mich jeden Tag um 9 Uhr ans Frühstück.“</i>
+            </li>
+          </ul>
+        ) : (
+          <ul className="steps-list small">
+            <li>
+              <b>Erinnerungen-App:</b> neue Erinnerung, z. B. „Frühstück eingetragen? 🥐“, mit Uhrzeit und{' '}
+              <i>Wiederholen: Täglich</i>.
+            </li>
+            <li>
+              Oder sag einfach: <i>„Siri, erinnere mich jeden Tag um 9 Uhr ans Frühstück.“</i>
+            </li>
+          </ul>
+        )}
+        <p className="small muted">
+          Gute Zeiten zum Start: 9:00 Frühstück, 10:30 Trinken, 12:30 Mittagessen, 18:30 Abendessen, 20:00 Check-in, dazu
+          deine Medikamenten-Zeiten.
+        </p>
+      </section>
+
+      {!isAndroid && (
         <button className="card action-card" onClick={() => navigate('/kurzbefehle')}>
           <span className="action-icon">⚡</span>
           <span>
             <b>Kurzbefehle & Apple Health</b>
-            <span className="small muted block">Schritte und Schlaf automatisch übernehmen, Erinnerungen</span>
+            <span className="small muted block">Schritte und Schlaf vom iPhone übernehmen</span>
           </span>
           <span className="chev">›</span>
         </button>
@@ -223,10 +184,9 @@ export function SettingsScreen() {
           onClick={async () => {
             if (!confirm('Einstellungen auf Standard zurücksetzen? Deine Einträge bleiben erhalten.')) return
             for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) {
-              if (k === 'name' || k === 'onboarded' || k === 'healthConnected') continue
+              if (k === 'name' || k === 'onboarded') continue
               await setSetting(k as never, v as never)
             }
-            await syncReminders()
             toast('Einstellungen zurückgesetzt')
           }}
         >

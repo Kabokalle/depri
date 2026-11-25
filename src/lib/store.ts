@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 /** Winzige globale Stores für Sheets, Toasts und Routing (ohne zusätzliche Bibliothek) */
-function createStore<T>(initial: T) {
+export function createStore<T>(initial: T) {
   let value = initial
   const subs = new Set<() => void>()
   return {

@@ -1,7 +1,7 @@
 import { setSetting, useSettings } from '../lib/settings'
 import { Toggle } from '../components/ui'
 import { SHORTCUT_NAME, runHealthShortcut } from '../platform/health'
-import { isAndroidApp } from '../platform/native'
+import { isAndroid } from '../platform/native'
 
 export function ShortcutGuide() {
   const s = useSettings()
@@ -14,9 +14,9 @@ export function ShortcutGuide() {
         </p>
       </header>
 
-      {isAndroidApp && (
+      {isAndroid && (
         <div className="card">
-          <p>Diese Anleitung ist fürs iPhone. In der Android-App verbindest du Health Connect direkt unter „Mehr“.</p>
+          <p>Diese Anleitung ist fürs iPhone. Auf Android gibt es keine Kurzbefehle – trag deine Schritte auf „Heute“ einfach selbst ein (Tipp auf „Bewegung“).</p>
         </div>
       )}
 
@@ -136,21 +136,11 @@ export function ShortcutGuide() {
       </section>
 
       <section className="card">
-        <h3>🔔 Erinnerungen am iPhone</h3>
+        <h3>🔔 Erinnerungen</h3>
         <p className="small">
-          Web-Apps dürfen am iPhone ohne Server keine eigenen Erinnerungen planen. Am einfachsten geht es so:
-        </p>
-        <p className="small">
-          <b>Variante A – Erinnerungen-App:</b> neue Erinnerung, z. B. „Etwas trinken 💧“, mit <i>Datum &amp; Uhrzeit</i> und{' '}
-          <i>Wiederholen: Täglich</i>.
-        </p>
-        <p className="small">
-          <b>Variante B – Kurzbefehle-Automation:</b> Kurzbefehle → <b>Automation</b> → <b>+</b> → <b>Tageszeit</b>, Uhrzeit
-          wählen, <b>Täglich</b>, <b>Sofort ausführen</b>. Als Aktion <b>„Mitteilung anzeigen“</b> mit einem freundlichen Text,
-          z. B. „Wie geht es dir gerade? Ein Tipp in Depri reicht.“
-        </p>
-        <p className="small muted">
-          Gute Zeiten zum Start: 10:30 Trinken, 12:30 Mittagessen, 20:00 Check-in, dazu deine Medikamenten-Zeiten.
+          Am einfachsten mit der <b>Erinnerungen-App</b>: neue Erinnerung, z. B. „Frühstück eingetragen? 🥐“, mit Uhrzeit und{' '}
+          <i>Wiederholen: Täglich</i>. Oder per Kurzbefehle → <b>Automation</b> → <b>Tageszeit</b> → Aktion{' '}
+          <b>„Mitteilung anzeigen“</b>.
         </p>
       </section>
     </div>

@@ -2,7 +2,7 @@
 
 Eine kleine, private App für schwere Tage. Sie hält fest, wie der Tag war, ohne Druck, ohne Streaks und ohne Server.
 
-- **Bewegung**: Schritte (automatisch aus Apple Health / Health Connect oder von Hand), Aktivitäten mit Freude- und Erfolgs-Bewertung
+- **Bewegung**: Schritte (am iPhone per Kurzbefehl aus Apple Health oder von Hand), Aktivitäten mit Freude- und Erfolgs-Bewertung
 - **Essen**: was, wann, wie viel (kein Kalorienzählen)
 - **Getränke**: Art, Menge, Koffein; Wasser und Kaffee mit einem Tipp
 - **Check-in**: Stimmung, Energie, optional Angst, Antrieb, Konzentration, Grübeln, Appetit
@@ -27,7 +27,11 @@ Web-App auf dem Home-Bildschirm (dauerhaft, kostenlos):
 
 ## Android
 
-Folgt: native App (APK) mit Health Connect und echten Erinnerungen. Der Code dafür (`src/platform/`) ist schon vorbereitet.
+Dieselbe Web-App, keine separate App nötig:
+
+1. `https://kabokalle.github.io/depri/` in **Chrome** öffnen
+2. **⋮ → App installieren** (oder „Zum Startbildschirm hinzufügen“)
+3. Schritte und Schlaf trägst du selbst ein; Erinnerungen über Google Kalender, Google Tasks oder „Hey Google, erinnere mich …“
 
 ## Entwicklung
 

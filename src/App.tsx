@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { closeSheet, navigate, sheetStore, toastStore, useRoute, useStore } from './lib/store'
+import { closeSheet, sheetStore, toastStore, useRoute, useStore } from './lib/store'
 import { todayStr } from './lib/dates'
 import { DayView } from './screens/DayView'
 import { History } from './screens/History'
@@ -22,9 +22,7 @@ import { ReviewSheet } from './sheets/ReviewSheet'
 import { MedicationSheet, SideEffectSheet } from './sheets/MedicationSheets'
 import { AppointmentSheet, QuestionSheet } from './sheets/DoctorSheets'
 import { CrisisSheet } from './components/CrisisHelp'
-import { isAndroidApp } from './platform/native'
-import { syncHealth } from './platform/health'
-import { initReminderTapHandler, syncReminders } from './platform/reminders'
+import { initInstallPrompt } from './platform/native'
 
 const TABS = [
   { path: '/heute', label: 'Heute', icon: '☀️' },
@@ -137,23 +135,7 @@ export default function App() {
 
   useEffect(() => {
     navigator.storage?.persist?.().catch(() => {})
-    if (!isAndroidApp) return
-    // Android: beim Start und bei jeder Rückkehr in die App synchronisieren
-    syncHealth(7)
-    syncReminders()
-    initReminderTapHandler((r) => navigate(r))
-    let remove: (() => void) | undefined
-    import('@capacitor/app').then(({ App: CapApp }) => {
-      CapApp.addListener('appStateChange', (st) => {
-        if (st.isActive) syncHealth(3)
-      }).then((h) => (remove = () => h.remove()))
-      CapApp.addListener('backButton', () => {
-        if (sheetStore.get()) closeSheet()
-        else if (window.location.hash && !window.location.hash.startsWith('#/heute')) window.history.back()
-        else CapApp.minimizeApp()
-      })
-    })
-    return () => remove?.()
+    initInstallPrompt()
   }, [])
 
   return (

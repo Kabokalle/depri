@@ -18,8 +18,8 @@ import {
   label,
 } from '../lib/labels'
 import { useSettings, type Settings } from '../lib/settings'
-import { navigate, openSheet, toast, type SheetKind } from '../lib/store'
-import { isIOSWeb, isStandalone } from '../platform/native'
+import { navigate, openSheet, toast, useStore, type SheetKind } from '../lib/store'
+import { installStore, isAndroid, isIOSWeb, isStandalone, promptInstall } from '../platform/native'
 
 export function DayView({ date }: { date: string }) {
   const d = useDay(date)
@@ -79,7 +79,9 @@ function Banners({ settings }: { settings: Settings }) {
     const m = await db.checkins.orderBy('ts').first()
     return m?.date
   }, [])
+  const install = useStore(installStore)
   const showInstall = isIOSWeb && !isStandalone
+  const showAndroidInstall = isAndroid && !isStandalone
   const phqDue =
     (lastPhq && daysBetween(lastPhq.date, todayStr()) >= settings.phqIntervalDays) ||
     (!lastPhq && firstUse && daysBetween(firstUse, todayStr()) >= 1)
@@ -97,15 +99,42 @@ function Banners({ settings }: { settings: Settings }) {
               <b>Tipp:</b> Tippe in Safari auf <b>Teilen</b> → <b>Zum Home-Bildschirm</b>, dann startet Depri wie eine App.
             </p>
           )}
+          {showAndroidInstall && !install && (
+            <p className="small">
+              <b>Tipp:</b> Tippe in Chrome oben rechts auf <b>⋮</b> → <b>App installieren</b> (oder „Zum Startbildschirm
+              hinzufügen“), dann startet Depri wie eine App.
+            </p>
+          )}
           <button className="btn small" onClick={() => db.settings.put({ key: 'onboarded', value: true })}>
             Verstanden
           </button>
         </div>
       )}
-      {settings.onboarded && showInstall && (
+      {!isStandalone && install && (
+        <button
+          className="card banner subtle row-between"
+          onClick={async () => {
+            if (await promptInstall()) toast('Depri ist installiert ✓')
+          }}
+        >
+          <span className="small">
+            📲 <b>Depri als App installieren</b> – eigenes Icon, offline, Daten sicher.
+          </span>
+          <span className="chev">›</span>
+        </button>
+      )}
+      {settings.onboarded && (showInstall || (showAndroidInstall && !install)) && (
         <div className="card banner subtle">
           <p className="small">
-            Damit deine Daten sicher bleiben: In Safari <b>Teilen → Zum Home-Bildschirm</b> und Depri von dort öffnen.
+            {isAndroid ? (
+              <>
+                Damit deine Daten sicher bleiben: In Chrome <b>⋮ → App installieren</b> und Depri vom Startbildschirm öffnen.
+              </>
+            ) : (
+              <>
+                Damit deine Daten sicher bleiben: In Safari <b>Teilen → Zum Home-Bildschirm</b> und Depri von dort öffnen.
+              </>
+            )}
           </p>
         </div>
       )}

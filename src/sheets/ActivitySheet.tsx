@@ -64,7 +64,6 @@ export function ActivitySheet({ date, id, onClose }: { date: string; id?: number
         />
       }
     >
-      {existing?.source === 'healthconnect' && <p className="muted small">Automatisch aus Health Connect übernommen.</p>}
       <Field label="Was hast du gemacht?">
         <Chips options={ACTIVITY_KINDS} value={kind} onChange={(v) => v && setKind(v)} />
       </Field>
@@ -107,8 +106,8 @@ export function StepsSheet({ date, onClose }: { date: string; onClose: () => voi
   return (
     <Sheet title="Schritte" onClose={onClose} footer={<SheetFooter onSave={save} />}>
       <p className="muted small">
-        Am iPhone kommen die Schritte automatisch über den Kurzbefehl, auf Android über Health Connect. Hier kannst du sie
-        auch selbst eintragen.
+        Deine Schritte siehst du z. B. in der Health-App (iPhone), in Google Fit oder Samsung Health (Android). Am iPhone
+        kann sie auch der Kurzbefehl übernehmen.
       </p>
       <Field label="Schritte heute">
         <Stepper value={steps} onChange={setSteps} step={500} max={100000} />
