@@ -46,6 +46,10 @@ export interface Meal {
   size: MealSize
   grams?: number
   note?: string
+  /** süß (Kuchen, Schokolade …) */
+  sweet?: boolean
+  /** aus Heißhunger gegessen */
+  craving?: boolean
   product?: ProductRef
   /** Nährwerte der verzehrten Menge */
   nutrition?: Nutrition
@@ -181,6 +185,10 @@ export interface DayReview {
   events?: string
   tags: string[]
   weightKg?: number
+  /** Bildschirmzeit nach 20 Uhr in Minuten */
+  screenEveningMin?: number
+  /** Periode: 0 = nein, 1 leicht, 2 mittel, 3 stark */
+  period?: number
   updatedAt: number
 }
 

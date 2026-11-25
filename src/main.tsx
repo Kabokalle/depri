@@ -12,6 +12,6 @@ createRoot(document.getElementById('root')!).render(
 if (import.meta.env.DEV) {
   // Testdaten im Entwicklungsmodus: window.depriSeed() / window.depriClear()
   import('./lib/seed').then((m) => {
-    Object.assign(window, { depriSeed: m.seed, depriClear: m.clearAll })
+    Object.assign(window, { depriSeed: m.seed, depriSeedPatterns: m.seedPatterns, depriClear: m.clearAll })
   })
 }

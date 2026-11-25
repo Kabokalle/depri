@@ -3,6 +3,7 @@ import { db, type Social } from '../db'
 import { Chips, Field, MultiChips, Sheet, SheetFooter, Stepper } from '../components/ui'
 import { DAY_TAGS, SOCIAL } from '../lib/labels'
 import { toast } from '../lib/store'
+import { useSettings } from '../lib/settings'
 
 export function ReviewSheet({ date, onClose }: { date: string; onClose: () => void }) {
   const [outside, setOutside] = useState(0)
@@ -12,6 +13,9 @@ export function ReviewSheet({ date, onClose }: { date: string; onClose: () => vo
   const [tags, setTags] = useState<string[]>([])
   const [weight, setWeight] = useState('')
   const [exists, setExists] = useState(false)
+  const [screen, setScreen] = useState<number | undefined>()
+  const [period, setPeriod] = useState<number | undefined>()
+  const settings = useSettings()
 
   useEffect(() => {
     db.dayReviews.get(date).then((r) => {
@@ -23,6 +27,8 @@ export function ReviewSheet({ date, onClose }: { date: string; onClose: () => vo
       setEvents(r.events ?? '')
       setTags(r.tags ?? [])
       setWeight(r.weightKg ? String(r.weightKg) : '')
+      setScreen(r.screenEveningMin)
+      setPeriod(r.period)
     })
   }, [date])
 
@@ -35,6 +41,8 @@ export function ReviewSheet({ date, onClose }: { date: string; onClose: () => vo
       events: events.trim() || undefined,
       tags,
       weightKg: weight ? Number(weight.replace(',', '.')) : undefined,
+      screenEveningMin: screen,
+      period,
       updatedAt: Date.now(),
     })
     toast('Tagesrückblick gespeichert ✨')
@@ -79,6 +87,35 @@ export function ReviewSheet({ date, onClose }: { date: string; onClose: () => vo
         <MultiChips options={DAY_TAGS} value={tags} onChange={setTags} />
         <textarea rows={3} value={events} onChange={(e) => setEvents(e.target.value)} placeholder="Ereignisse, Auslöser, schöne Momente …" />
       </Field>
+      <Field label="Handy / Bildschirm am Abend" hint="nach 20 Uhr, optional">
+        <Chips
+          options={[
+            { value: 0, label: 'Gar nicht' },
+            { value: 20, label: 'bis 30 min' },
+            { value: 45, label: '30–60 min' },
+            { value: 90, label: '1–2 h' },
+            { value: 150, label: 'mehr als 2 h' },
+          ]}
+          value={screen}
+          onChange={setScreen}
+          allowEmpty
+        />
+      </Field>
+      {settings.trackCycle && (
+        <Field label="Periode heute?" hint="optional">
+          <Chips
+            options={[
+              { value: 0, label: 'Nein' },
+              { value: 1, label: 'Leicht' },
+              { value: 2, label: 'Mittel' },
+              { value: 3, label: 'Stark' },
+            ]}
+            value={period}
+            onChange={setPeriod}
+            allowEmpty
+          />
+        </Field>
+      )}
       <Field label="Gewicht" hint="kg, optional">
         <input type="text" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="–" />
       </Field>

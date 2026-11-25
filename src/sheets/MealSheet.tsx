@@ -16,6 +16,8 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
   const [grams, setGrams] = useState('')
   const [note, setNote] = useState('')
   const [product, setProduct] = useState<ProductRef | undefined>()
+  const [sweet, setSweet] = useState(false)
+  const [craving, setCraving] = useState(false)
 
   useEffect(() => {
     if (id == null) return
@@ -28,6 +30,8 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       setGrams(m.grams ? String(m.grams) : '')
       setNote(m.note ?? '')
       setProduct(m.product)
+      setSweet(!!m.sweet)
+      setCraving(!!m.craving)
     })
   }, [id])
 
@@ -40,6 +44,7 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
 
   const pick = (p: Product) => {
     setProduct(toRef(p))
+    if ((p.per100.sugar ?? 0) > 15) setSweet(true)
     setWhat(p.brand && !p.name.includes(p.brand) ? `${p.name} (${p.brand})` : p.name)
     const g = p.serving ?? (p.quantity && p.quantity <= 150 ? p.quantity : 100)
     setGrams(String(Math.round(g)))
@@ -55,6 +60,8 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       size,
       grams: grams ? Number(grams) : undefined,
       note: note.trim() || undefined,
+      sweet: sweet || undefined,
+      craving: craving || undefined,
       product,
       nutrition: product ? scaleNutrition(product.per100, amount) : undefined,
     }
@@ -113,6 +120,16 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       </Field>
       <Field label="Menge">
         <Chips options={MEAL_SIZES} value={size} onChange={(v) => v && setSize(v)} />
+      </Field>
+      <Field label="Besonderheiten" hint="optional">
+        <div className="chips">
+          <button type="button" className={'chip' + (sweet ? ' on' : '')} onClick={() => setSweet(!sweet)}>
+            <span className="chip-icon">🍫</span>Süß
+          </button>
+          <button type="button" className={'chip' + (craving ? ' on' : '')} onClick={() => setCraving(!craving)}>
+            <span className="chip-icon">⚡</span>Heißhunger
+          </button>
+        </div>
       </Field>
       <Field label="Gramm" hint={product ? 'für die Nährwerte' : 'optional'}>
         <input type="number" inputMode="numeric" value={grams} onChange={(e) => setGrams(e.target.value)} placeholder="–" />

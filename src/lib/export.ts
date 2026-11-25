@@ -52,7 +52,7 @@ export async function exportCsv(from: string, to: string): Promise<Blob> {
   const r = await loadRange(from, to)
   const medName = (id?: number) => r.meds.find((m) => m.id === id)?.name ?? ''
   const rows: unknown[][] = [['Datum', 'Uhrzeit', 'Bereich', 'Art', 'Wert', 'Einheit', 'Details']]
-  for (const m of r.meals) rows.push([m.date, timeStr(m.ts), 'Essen', label(MEAL_TYPES, m.type), m.grams ?? label(MEAL_SIZES, m.size), m.grams ? 'g' : '', [m.what, nutritionShort(m.nutrition), m.note].filter(Boolean).join(' – ')])
+  for (const m of r.meals) rows.push([m.date, timeStr(m.ts), 'Essen', label(MEAL_TYPES, m.type), m.grams ?? label(MEAL_SIZES, m.size), m.grams ? 'g' : '', [m.what, m.sweet ? 'süß' : '', m.craving ? 'Heißhunger' : '', nutritionShort(m.nutrition), m.note].filter(Boolean).join(' – ')])
   for (const d of r.drinks) rows.push([d.date, timeStr(d.ts), 'Getränk', label(DRINK_KINDS, d.kind), d.ml, 'ml', [d.product?.name, d.caffeine ? 'koffeinhaltig' : '', nutritionShort(d.nutrition)].filter(Boolean).join(' – ')])
   for (const a of r.activities)
     rows.push([a.date, timeStr(a.ts), 'Aktivität', label(ACTIVITY_KINDS, a.kind), a.minutes, 'min', [a.joy != null ? `Freude ${a.joy}/10` : '', a.achievement != null ? `Erfolg ${a.achievement}/10` : '', a.note].filter(Boolean).join(' – ')])
@@ -91,7 +91,7 @@ export async function exportCsv(from: string, to: string): Promise<Blob> {
   for (const e of r.sideEffects) rows.push([e.date, timeStr(e.ts), 'Nebenwirkung', e.kind, label(SEVERITY, e.severity), '', [medName(e.medId), e.note].filter(Boolean).join(' – ')])
   for (const s of r.substances) rows.push([s.date, timeStr(s.ts), 'Substanz', label(SUBSTANCE_KINDS, s.kind), s.amount, '', s.note])
   for (const v of r.reviews)
-    rows.push([v.date, '', 'Tagesrückblick', '', v.outsideMin, 'min draußen', [v.social ? `Kontakt: ${label(SOCIAL, v.social)}` : '', v.socialWith, v.tags.join(', '), v.events, v.weightKg ? `${v.weightKg} kg` : ''].filter(Boolean).join(' – ')])
+    rows.push([v.date, '', 'Tagesrückblick', '', v.outsideMin, 'min draußen', [v.social ? `Kontakt: ${label(SOCIAL, v.social)}` : '', v.socialWith, v.tags.join(', '), v.events, v.weightKg ? `${v.weightKg} kg` : '', v.screenEveningMin != null ? `Bildschirm abends ${v.screenEveningMin} min` : '', v.period ? `Periode (${['', 'leicht', 'mittel', 'stark'][v.period]})` : ''].filter(Boolean).join(' – ')])
   for (const p of r.phq9.filter((p) => p.date >= from && p.date <= to))
     rows.push([p.date, timeStr(p.ts), 'PHQ-9', 'Summenwert', p.score, '0–27', p.answers.map((a, i) => `${PHQ_SHORT[i]}: ${a}`).join(', ')])
   const head = rows.shift()!

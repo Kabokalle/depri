@@ -70,6 +70,15 @@ export function SettingsScreen() {
       </section>
 
       <section className="card">
+        <h3>Zusätzlich erfassen</h3>
+        <Toggle
+          checked={s.trackCycle}
+          onChange={(v) => setSetting('trackCycle', v)}
+          label="Zyklus / Periode (im Tagesrückblick)"
+        />
+      </section>
+
+      <section className="card">
         <h3>Startseite</h3>
         <p className="muted small">Blende aus, was du gerade nicht brauchst.</p>
         {Object.entries(SECTION_LABELS).map(([k, l]) => (

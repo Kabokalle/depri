@@ -441,13 +441,30 @@ function Summary({ d, s }: { d: DayData; s: Settings }) {
         <div className="card wide substances">
           <div className="card-head">
             <h3>🍷 Substanzen</h3>
-            <button className="btn small ghost" onClick={() => openSheet({ kind: 'substance', date: d.date })}>
-              + Eintragen
-            </button>
+            <div className="row-inline">
+              <button
+                className="btn small"
+                onClick={async () => {
+                  const ts = d.date === todayStr() ? Date.now() : new Date(`${d.date}T12:00`).getTime()
+                  const id = await db.substances.add({ ts, date: d.date, kind: 'nikotin', amount: 1 })
+                  toast('+1 Zigarette eingetragen', () => db.substances.delete(id as number))
+                }}
+              >
+                🚬 +1
+              </button>
+              <button className="btn small ghost" onClick={() => openSheet({ kind: 'substance', date: d.date })}>
+                + Eintragen
+              </button>
+            </div>
           </div>
           <p className="muted small">
             {d.substances.length
-              ? d.substances.map((x) => `${icon(SUBSTANCE_KINDS, x.kind)} ${x.amount}× ${label(SUBSTANCE_KINDS, x.kind)}`).join(' · ')
+              ? SUBSTANCE_KINDS.map((k) => {
+                  const n = d.substances.filter((x) => x.kind === k.value).reduce((a, x) => a + x.amount, 0)
+                  return n ? `${k.icon} ${n} ${k.unit}` : ''
+                })
+                  .filter(Boolean)
+                  .join(' · ')
               : 'Nichts eingetragen'}
             {t.caffeine ? ` · ☕ ${t.caffeine}× Koffein` : ''}
           </p>

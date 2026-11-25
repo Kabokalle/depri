@@ -11,6 +11,7 @@ export interface Settings {
   /** iPhone: Apple-Health-Abgleich über Kurzbefehl eingerichtet */
   iosShortcut: boolean
   phqIntervalDays: number
+  trackCycle: boolean
   onboarded: boolean
 }
 
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   todaySections: Object.fromEntries(Object.keys(SECTION_LABELS).map((k) => [k, true])),
   iosShortcut: false,
   phqIntervalDays: 14,
+  trackCycle: false,
   onboarded: false,
 }
 

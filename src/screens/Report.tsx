@@ -23,6 +23,7 @@ export function Report() {
   const [freeFrom, setFreeFrom] = useState(addDays(today, -27))
   const [freeTo, setFreeTo] = useState(today)
   const [includeNotes, setIncludeNotes] = useState(false)
+  const [detailed, setDetailed] = useState(true)
   const [busy, setBusy] = useState(false)
 
   let from = addDays(today, -27)
@@ -39,8 +40,12 @@ export function Report() {
     const r = await loadRange(from, to)
     const ser = series(r)
     const num = (a: (number | undefined)[]) => a.filter((x): x is number => x != null)
+    const { analyze } = await import('../lib/insights')
+    const a = analyze(r, { cycle: s.trackCycle })
     return {
       r,
+      findings: a.corr.findings.length,
+      highlights: a.highlights,
       tracked: ser.filter((x) => x.mood != null || x.meals || x.drinkMl != null || x.steps != null).length,
       mood: avg(num(ser.map((x) => x.mood))),
       sleep: avg(num(ser.map((x) => x.sleepMin))),
@@ -49,14 +54,14 @@ export function Report() {
       adh: medAdherence(r).filter((a) => a.planned > 0),
       openQ: r.questions.filter((q) => !q.done).length,
     }
-  }, [from, to])
+  }, [from, to, s.trackCycle])
 
   const makePdf = async () => {
     setBusy(true)
     try {
       const { buildReportPdf } = await import('../lib/pdf')
       const r = await loadRange(from, to)
-      const blob = buildReportPdf(r, { name: s.name, includeNotes })
+      const blob = buildReportPdf(r, { name: s.name, includeNotes, detailed, cycle: s.trackCycle })
       await shareFile(blob, `Verlaufsbericht-${from}-bis-${to}.pdf`, 'Verlaufsbericht')
     } catch (e) {
       toast('PDF konnte nicht erstellt werden: ' + (e as Error).message)
@@ -103,6 +108,11 @@ export function Report() {
           <input type="text" value={s.name} onChange={(e) => setSetting('name', e.target.value)} placeholder="Vor- und Nachname" />
         </Field>
         <Toggle checked={includeNotes} onChange={setIncludeNotes} label="Persönliche Notizen aus Check-ins einschließen" />
+        <Toggle checked={detailed} onChange={setDetailed} label="Ausführliche Auswertung und Tagestabelle" />
+        <p className="small muted">
+          Mit Tagesrhythmus-Grafik, Auswertung nach Uhrzeit, möglichen Zusammenhängen (z. B. Koffein und Schlaf) und einer
+          Tabelle aller Tage. Ausgeschaltet entsteht ein kompakter Bericht.
+        </p>
       </section>
 
       {preview && (
@@ -125,6 +135,11 @@ export function Report() {
               </li>
             ))}
             <li>❓ {preview.openQ} offene Fragen</li>
+            {detailed && (
+              <li>
+                🔗 {preview.findings ? `${preview.findings} mögliche Zusammenhänge gefunden` : 'Noch keine deutlichen Zusammenhänge (mehr Tage helfen)'}
+              </li>
+            )}
           </ul>
         </section>
       )}

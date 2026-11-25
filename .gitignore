@@ -30,3 +30,6 @@ dev-dist
 keystore.properties
 *.apk
 *.aab
+
+# Beispiel-Berichte mit Testdaten
+beispiel/
