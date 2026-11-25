@@ -4,6 +4,37 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export type Source = 'manual' | 'shortcut' | 'healthconnect'
 
+/** Nährwerte – je 100 g/ml oder absolut für die verzehrte Menge */
+export interface Nutrition {
+  kcal?: number
+  sugar?: number
+  carbs?: number
+  fat?: number
+  satFat?: number
+  protein?: number
+  salt?: number
+  fiber?: number
+  caffeine?: number
+}
+
+/** Verknüpftes Produkt (aus dem Barcode-Scan) */
+export interface ProductRef {
+  code: string
+  name: string
+  brand?: string
+  per100: Nutrition
+  /** 'g' oder 'ml' */
+  unit: 'g' | 'ml'
+}
+
+/** Produkt-Cache, damit erneutes Scannen auch offline klappt */
+export interface Product extends ProductRef {
+  quantity?: number
+  serving?: number
+  image?: string
+  lastUsed: number
+}
+
 export type MealType = 'fruehstueck' | 'mittag' | 'abend' | 'snack'
 export type MealSize = 'klein' | 'normal' | 'gross'
 export interface Meal {
@@ -15,6 +46,9 @@ export interface Meal {
   size: MealSize
   grams?: number
   note?: string
+  product?: ProductRef
+  /** Nährwerte der verzehrten Menge */
+  nutrition?: Nutrition
 }
 
 export type DrinkKind = 'wasser' | 'kaffee' | 'tee' | 'saft' | 'softdrink' | 'energy' | 'milch' | 'sonstiges'
@@ -25,6 +59,8 @@ export interface Drink {
   kind: DrinkKind
   ml: number
   caffeine: boolean
+  product?: ProductRef
+  nutrition?: Nutrition
 }
 
 export type ActivityKind =
@@ -197,6 +233,7 @@ export class DepriDB extends Dexie {
   appointments!: EntityTable<Appointment, 'id'>
   questions!: EntityTable<Question, 'id'>
   settings!: EntityTable<SettingRow, 'key'>
+  products!: EntityTable<Product, 'code'>
 
   constructor() {
     super('depri')
@@ -217,6 +254,7 @@ export class DepriDB extends Dexie {
       questions: '++id, createdAt',
       settings: 'key',
     })
+    this.version(2).stores({ products: 'code, lastUsed' })
   }
 }
 
@@ -239,5 +277,6 @@ export const DATA_TABLES = [
   'appointments',
   'questions',
   'settings',
+  'products',
 ] as const
 export type TableName = (typeof DATA_TABLES)[number]

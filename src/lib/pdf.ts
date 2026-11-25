@@ -4,6 +4,7 @@ import { activityInsights, avg, medAdherence, series, sideEffectSummary } from '
 import { formatDayMonth, formatShort, minutesToHM, todayStr } from './dates'
 import { PHQ_SHORT, PHQ_OPTIONS, phqSeverity } from './phq9'
 import { SOCIAL, SUBSTANCE_KINDS } from './labels'
+import { sumNutrition } from './food'
 
 export interface ReportOptions {
   name: string
@@ -382,6 +383,15 @@ export function buildReportPdf(r: RangeData, opt: ReportOptions): Blob {
     const small = r.meals.filter((m) => m.size === 'klein').length
     doc.text(
       `Mahlzeiten an ${mealDays.length} Tagen erfasst, Ø ${f1(avg(mealDays.map((x) => x.meals)))} pro Tag. ${small ? `${small} davon als „kleine“ Portion.` : ''} Tage mit nur 0–1 Mahlzeit: ${mealDays.filter((x) => x.meals <= 1).length}.`,
+    )
+  }
+  const scanned = [...r.meals, ...r.drinks].filter((x) => x.nutrition)
+  if (scanned.length) {
+    const days = new Set(scanned.map((x) => x.date)).size
+    const tot = sumNutrition(scanned.map((x) => x.nutrition))
+    const perDay = (v?: number) => (v != null ? v / days : undefined)
+    doc.text(
+      `Nährwerte aus ${scanned.length} gescannten Produkten an ${days} Tagen (nur diese, nicht die gesamte Ernährung), Ø pro Tag: ${f0(perDay(tot.kcal))} kcal, Zucker ${f0(perDay(tot.sugar))} g, Fett ${f0(perDay(tot.fat))} g, Eiweiß ${f0(perDay(tot.protein))} g.`,
     )
   }
   const subs = SUBSTANCE_KINDS.map((k) => {

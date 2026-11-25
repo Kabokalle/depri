@@ -18,6 +18,7 @@ export const SECTION_LABELS: Record<string, string> = {
   movement: 'Bewegung',
   drinks: 'Getränke',
   meals: 'Essen',
+  nutrition: 'Nährwerte (gescannte Produkte)',
   mood: 'Stimmung',
   sleep: 'Schlaf',
   meds: 'Medikamente',

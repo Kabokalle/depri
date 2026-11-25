@@ -13,6 +13,7 @@ import {
   type Sleep,
   type Substance,
 } from '../db'
+import { sumNutrition } from './food'
 
 export interface DayData {
   date: string
@@ -71,7 +72,8 @@ export function dayTotals(d: DayData) {
   const activeMin = d.activities.reduce((a, x) => a + x.minutes, 0)
   const moodAvg = d.checkins.length ? d.checkins.reduce((a, c) => a + c.mood, 0) / d.checkins.length : undefined
   const energyAvg = d.checkins.length ? d.checkins.reduce((a, c) => a + c.energy, 0) / d.checkins.length : undefined
-  return { drinkMl, caffeine, activeMin, moodAvg, energyAvg, steps: d.steps?.steps }
+  const nutrition = sumNutrition([...d.meals.map((m) => m.nutrition), ...d.drinks.map((x) => x.nutrition)])
+  return { drinkMl, caffeine, activeMin, moodAvg, energyAvg, steps: d.steps?.steps, nutrition }
 }
 
 /** Einnahme-Slots eines Tages für aktive Medikamente */

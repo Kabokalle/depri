@@ -3,6 +3,7 @@ import { ACTIVITY_KINDS, DRINK_KINDS, INTAKE_LABEL, MEAL_SIZES, MEAL_TYPES, SEVE
 import { timeStr, todayStr } from './dates'
 import { loadRange, series } from './stats'
 import { PHQ_SHORT } from './phq9'
+import { nutritionShort } from './food'
 
 const FORMAT = 'depri-backup'
 const VERSION = 1
@@ -51,8 +52,8 @@ export async function exportCsv(from: string, to: string): Promise<Blob> {
   const r = await loadRange(from, to)
   const medName = (id?: number) => r.meds.find((m) => m.id === id)?.name ?? ''
   const rows: unknown[][] = [['Datum', 'Uhrzeit', 'Bereich', 'Art', 'Wert', 'Einheit', 'Details']]
-  for (const m of r.meals) rows.push([m.date, timeStr(m.ts), 'Essen', label(MEAL_TYPES, m.type), m.grams ?? label(MEAL_SIZES, m.size), m.grams ? 'g' : '', [m.what, m.note].filter(Boolean).join(' – ')])
-  for (const d of r.drinks) rows.push([d.date, timeStr(d.ts), 'Getränk', label(DRINK_KINDS, d.kind), d.ml, 'ml', d.caffeine ? 'koffeinhaltig' : ''])
+  for (const m of r.meals) rows.push([m.date, timeStr(m.ts), 'Essen', label(MEAL_TYPES, m.type), m.grams ?? label(MEAL_SIZES, m.size), m.grams ? 'g' : '', [m.what, nutritionShort(m.nutrition), m.note].filter(Boolean).join(' – ')])
+  for (const d of r.drinks) rows.push([d.date, timeStr(d.ts), 'Getränk', label(DRINK_KINDS, d.kind), d.ml, 'ml', [d.product?.name, d.caffeine ? 'koffeinhaltig' : '', nutritionShort(d.nutrition)].filter(Boolean).join(' – ')])
   for (const a of r.activities)
     rows.push([a.date, timeStr(a.ts), 'Aktivität', label(ACTIVITY_KINDS, a.kind), a.minutes, 'min', [a.joy != null ? `Freude ${a.joy}/10` : '', a.achievement != null ? `Erfolg ${a.achievement}/10` : '', a.note].filter(Boolean).join(' – ')])
   for (const s of r.steps) rows.push([s.date, '', 'Schritte', '', s.steps, 'Schritte', s.source])

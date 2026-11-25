@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Meal, type MealSize, type MealType } from '../db'
+import { db, type Meal, type MealSize, type MealType, type Product, type ProductRef } from '../db'
+import { ProductSection } from '../components/ProductSection'
+import { scaleNutrition, toRef } from '../lib/food'
 import { Chips, Field, Sheet, SheetFooter } from '../components/ui'
 import { MEAL_SIZES, MEAL_TYPES, guessMealType } from '../lib/labels'
 import { combine, defaultTime, timeStr } from '../lib/dates'
@@ -13,6 +15,7 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
   const [size, setSize] = useState<MealSize>('normal')
   const [grams, setGrams] = useState('')
   const [note, setNote] = useState('')
+  const [product, setProduct] = useState<ProductRef | undefined>()
 
   useEffect(() => {
     if (id == null) return
@@ -24,6 +27,7 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       setSize(m.size)
       setGrams(m.grams ? String(m.grams) : '')
       setNote(m.note ?? '')
+      setProduct(m.product)
     })
   }, [id])
 
@@ -34,6 +38,14 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
     return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map((e) => e[0])
   }, [])
 
+  const pick = (p: Product) => {
+    setProduct(toRef(p))
+    setWhat(p.brand && !p.name.includes(p.brand) ? `${p.name} (${p.brand})` : p.name)
+    const g = p.serving ?? (p.quantity && p.quantity <= 150 ? p.quantity : 100)
+    setGrams(String(Math.round(g)))
+  }
+  const amount = Number(grams) || 100
+
   const save = async () => {
     const meal: Meal = {
       ts: combine(date, time),
@@ -43,8 +55,11 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       size,
       grams: grams ? Number(grams) : undefined,
       note: note.trim() || undefined,
+      product,
+      nutrition: product ? scaleNutrition(product.per100, amount) : undefined,
     }
-    if (id != null) await db.meals.update(id, meal)
+    if (product && !grams) meal.grams = amount
+    if (id != null) await db.meals.put({ ...meal, id })
     else await db.meals.add(meal)
     toast('Mahlzeit gespeichert 🍽️')
     onClose()
@@ -74,6 +89,9 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       <Field label="Art">
         <Chips options={MEAL_TYPES} value={type} onChange={(v) => v && setType(v)} />
       </Field>
+      <Field label="Verpacktes Produkt?" hint="optional">
+        <ProductSection kind="food" product={product} amount={amount} onPick={pick} onClear={() => setProduct(undefined)} />
+      </Field>
       <Field label="Was gab es?" hint="optional">
         <input
           type="text"
@@ -96,7 +114,7 @@ export function MealSheet({ date, id, onClose }: { date: string; id?: number; on
       <Field label="Menge">
         <Chips options={MEAL_SIZES} value={size} onChange={(v) => v && setSize(v)} />
       </Field>
-      <Field label="Gramm" hint="optional">
+      <Field label="Gramm" hint={product ? 'für die Nährwerte' : 'optional'}>
         <input type="number" inputMode="numeric" value={grams} onChange={(e) => setGrams(e.target.value)} placeholder="–" />
       </Field>
       <Field label="Notiz" hint="optional">

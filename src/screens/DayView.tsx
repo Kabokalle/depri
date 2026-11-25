@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
+import { nutritionShort, sugarCubes } from '../lib/food'
 import { SHORTCUT_NAME, awaitingHealth, clearAwaitingHealth, importFromClipboard, runHealthShortcut } from '../platform/health'
 import { dayTotals, medSlots, setIntake, useDay, type DayData } from '../lib/day'
 import { addDays, daysBetween, formatLong, greeting, minutesToHM, relativeDay, timeStr, todayStr } from '../lib/dates'
@@ -344,6 +345,49 @@ function Summary({ d, s }: { d: DayData; s: Settings }) {
           </button>
         </div>
       )}
+      {show('nutrition') && t.nutrition.count > 0 && (
+        <div className="card wide nutrition">
+          <div className="card-head">
+            <h3>🔎 Nährwerte</h3>
+            <span className="small muted">aus {t.nutrition.count} gescannten Produkt{t.nutrition.count === 1 ? '' : 'en'}</span>
+          </div>
+          <div className="nutri-grid">
+            {t.nutrition.kcal != null && (
+              <div className="nutri strong">
+                <span>Energie</span>
+                <b>{Math.round(t.nutrition.kcal).toLocaleString('de-DE')} kcal</b>
+              </div>
+            )}
+            {t.nutrition.sugar != null && (
+              <div className="nutri strong">
+                <span>Zucker</span>
+                <b>
+                  {Math.round(t.nutrition.sugar)} g
+                  {sugarCubes(t.nutrition.sugar)! >= 1 && <span className="muted small"> ≈ {sugarCubes(t.nutrition.sugar)!.toLocaleString('de-DE')} Würfel</span>}
+                </b>
+              </div>
+            )}
+            {t.nutrition.fat != null && (
+              <div className="nutri">
+                <span>Fett</span>
+                <b>{Math.round(t.nutrition.fat)} g</b>
+              </div>
+            )}
+            {t.nutrition.protein != null && (
+              <div className="nutri">
+                <span>Eiweiß</span>
+                <b>{Math.round(t.nutrition.protein)} g</b>
+              </div>
+            )}
+            {t.nutrition.salt != null && (
+              <div className="nutri">
+                <span>Salz</span>
+                <b>{t.nutrition.salt.toLocaleString('de-DE', { maximumFractionDigits: 1 })} g</b>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {show('meds') && (
         <div className="card wide meds">
           <div className="card-head">
@@ -431,11 +475,18 @@ function Timeline({ d }: { d: DayData }) {
       ts: m.ts,
       icon: icon(MEAL_TYPES, m.type),
       title: `${label(MEAL_TYPES, m.type)}${m.what ? `: ${m.what}` : ''}`,
-      detail: [label(MEAL_SIZES, m.size), m.grams ? `${m.grams} g` : '', m.note].filter(Boolean).join(' · '),
+      detail: [label(MEAL_SIZES, m.size), m.grams ? `${m.grams} g` : '', nutritionShort(m.nutrition), m.note].filter(Boolean).join(' · '),
       open: o('meal', m.id),
     })
   for (const x of d.drinks)
-    items.push({ key: `d${x.id}`, ts: x.ts, icon: icon(DRINK_KINDS, x.kind), title: `${label(DRINK_KINDS, x.kind)} ${x.ml} ml`, open: o('drink', x.id) })
+    items.push({
+      key: `d${x.id}`,
+      ts: x.ts,
+      icon: icon(DRINK_KINDS, x.kind),
+      title: `${x.product?.name ?? label(DRINK_KINDS, x.kind)} ${x.ml} ml`,
+      detail: nutritionShort(x.nutrition),
+      open: o('drink', x.id),
+    })
   for (const a of d.activities)
     items.push({
       key: `a${a.id}`,

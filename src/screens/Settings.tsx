@@ -173,7 +173,8 @@ export function SettingsScreen() {
         <h3>Datenschutz</h3>
         <p className="small muted">
           Depri hat keinen Server, kein Konto und keine Werbung. Alle Einträge bleiben in der App auf diesem Gerät. Nur du
-          entscheidest, ob du eine Sicherung oder einen Bericht weitergibst.
+          entscheidest, ob du eine Sicherung oder einen Bericht weitergibst. Beim Barcode-Scan wird nur die Nummer des
+          Produkts an die freie Datenbank Open Food Facts geschickt, um die Nährwerte abzurufen.
         </p>
       </section>
 
